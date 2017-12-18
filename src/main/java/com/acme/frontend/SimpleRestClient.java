@@ -13,15 +13,16 @@ import java.util.List;
 
 public class SimpleRestClient {
     public static void main(String[] args) {
-        List<Object> providers = new ArrayList<>();
+        final List<Object> providers = new ArrayList<>();
         providers.add(new JacksonJsonProvider());
-        String address = "http://localhost:13000/jaxrs-service/hello";
-        WebClient client =
+        final String address = "http://localhost:13000/jaxrs-service/sign/sign";
+        final WebClient client =
                 WebClient.create(address, providers);
 
-        client.path("jsonBean").type("application/json").accept(MediaType.APPLICATION_JSON_TYPE);
+        client.path("signJson").type("application/json")
+                .accept(MediaType.APPLICATION_JSON_TYPE);
 
-        ClientConfiguration config = WebClient.getConfig(client);
+        final ClientConfiguration config = WebClient.getConfig(client);
         config.getInInterceptors().add(new LoggingInInterceptor());
         config.getOutInterceptors().add(new LoggingOutInterceptor());
 
@@ -29,7 +30,19 @@ public class SimpleRestClient {
         data.setVal1("1");
         data.setVal2("deux");
 
-        Response message = client.post(data);
-        System.out.println("Message received : " + message.readEntity(String.class));
+        Response signResponse = client.post(data);
+        final String signResult = signResponse.readEntity(String.class);
+
+        final WebClient clientVerify =
+                WebClient.create("http://localhost:13000/jaxrs-service/verify/verify", providers);
+
+        clientVerify.path("check").type("application/json")
+                .accept(MediaType.APPLICATION_JSON_TYPE);
+
+        WebClient.getConfig(clientVerify).getInInterceptors().add(new LoggingInInterceptor());
+        WebClient.getConfig(clientVerify).getOutInterceptors().add(new LoggingOutInterceptor());
+
+        final Response verifyResponse = client.post(signResult);
+        final String verifyResult = verifyResponse.readEntity(String.class);
     }
 }
